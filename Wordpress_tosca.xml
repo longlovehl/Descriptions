@@ -1,0 +1,168 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<ns2:Definitions xmlns:ns2="http://docs.oasis-open.org/tosca/ns/2011/12" id="WordpressApp" name="WordpressApp">
+  <ns2:ServiceTemplate id="WordpressTopology">
+    <ns2:TopologyTemplate>
+	  <ns2:RelationshipTemplate id="WordpressPHP_HostOn_PHPContainer" type="HOSTON">
+		<ns2:SourceElement ref="PHPContainer"/>
+		<ns2:TargetElement ref="WordpressPHP"/>
+	  </ns2:RelationshipTemplate>
+	  <ns2:RelationshipTemplate id="PHPContainer_HostOn_ApacheServer" type="HOSTON">
+		<ns2:SourceElement ref="ApacheServer"/>
+		<ns2:TargetElement ref="PHPContainer"/>
+	  </ns2:RelationshipTemplate>
+	  <ns2:RelationshipTemplate id="ApacheServer_HostOn_ApacheVM" type="HOSTON">
+		<ns2:SourceElement ref="ApacheVM"/>
+		<ns2:TargetElement ref="ApacheServer"/>
+	  </ns2:RelationshipTemplate>
+	  <ns2:RelationshipTemplate id="WordpressData_HostOn_MySQLRDBMS" type="HOSTON">
+		<ns2:SourceElement ref="MySQLRDBMS"/>
+		<ns2:TargetElement ref="WordpressData"/>
+	  </ns2:RelationshipTemplate>
+	  <ns2:RelationshipTemplate id="MySQLRDBMS_HostOn_MySQLVM" type="HOSTON">
+		<ns2:SourceElement ref="MySQLVM"/>
+		<ns2:TargetElement ref="MySQLRDBMS"/>
+	  </ns2:RelationshipTemplate>
+	  <ns2:RelationshipTemplate id="WordpressPHP_ConnecTTo_MySQLRDBMS" type="CONNECTTO">
+		<ns2:SourceElement ref="MySQLRDBMS"/>
+		<ns2:TargetElement ref="WordpressPHP"/>
+	  </ns2:RelationshipTemplate>	
+      <ns2:NodeTemplate id="ApacheVM" minInstances="1" maxInstances="3" type="os">
+        <ns2:Properties>
+          <MappingProperties>
+            <MappingProperty type="os">
+              <property name="provider">dsg@openstack</property>
+              <property name="instanceType">000001920</property>
+              <property name="baseImage">a82e054f-4f01-49f9-bc4c-77a98045739c</property>
+              <property name="packages" />
+            </MappingProperty>
+          </MappingProperties>
+        </ns2:Properties>
+        <ns2:Requirements />
+        <ns2:Capabilities>
+          <ns2:Capability id="ApacheServer" type="HOSTON" />
+        </ns2:Capabilities>
+        <ns2:Policies />
+      </ns2:NodeTemplate>
+      <ns2:NodeTemplate id="ApacheServer" minInstances="1" maxInstances="2" type="software">
+        <ns2:Properties>
+          <MappingProperties />
+        </ns2:Properties>
+        <ns2:Requirements>
+          <ns2:Requirement id="ApacheVM" type="HOSTON" />
+        </ns2:Requirements>
+        <ns2:Capabilities>
+          <ns2:Capability id="ApacheServer" type="HOSTON" />
+        </ns2:Capabilities>
+        <ns2:Policies />
+        <ns2:DeploymentArtifacts>
+          <ns2:DeploymentArtifact xmlns:salsa="https://github.com/tuwiendsg/SALSA" name="Artifact_93f8753b-17ab-43c5-8f11-e3ec98fe1356" artifactType="salsa:sh" artifactRef="Artifact_93f8753b-17ab-43c5-8f11-e3ec98fe1356" />
+        </ns2:DeploymentArtifacts>
+      </ns2:NodeTemplate>
+      <ns2:NodeTemplate id="PHPContainer" minInstances="1" maxInstances="2" type="software">
+        <ns2:Properties>
+          <MappingProperties />
+        </ns2:Properties>
+        <ns2:Requirements>
+          <ns2:Requirement id="ApacheServer" type="HOSTON" />
+        </ns2:Requirements>
+        <ns2:Capabilities>
+          <ns2:Capability id="WordpressPHP" type="HOSTON" />
+        </ns2:Capabilities>
+        <ns2:Policies />
+        <ns2:DeploymentArtifacts>
+          <ns2:DeploymentArtifact xmlns:salsa="https://github.com/tuwiendsg/SALSA" name="Artifact_93f8753b-17ab-43c5-8f11-e3ec98fe1578" artifactType="salsa:sh" artifactRef="Artifact_93f8753b-17ab-43c5-8f11-e3ec98fe1578" />
+        </ns2:DeploymentArtifacts>
+      </ns2:NodeTemplate>
+      <ns2:NodeTemplate id="WordpressPHP" minInstances="1" maxInstances="2" type="software">
+        <ns2:Properties>
+          <MappingProperties />
+        </ns2:Properties>
+        <ns2:Requirements>
+          <ns2:Requirement id="MySQLRDBMS" type="CONNECTTO" />
+		  <ns2:Requirement id="PHPContainer" type="HOSTON" />
+        </ns2:Requirements>
+        <ns2:Capabilities />
+        <ns2:Policies />
+        <ns2:DeploymentArtifacts>
+          <ns2:DeploymentArtifact xmlns:salsa="https://github.com/tuwiendsg/SALSA" name="Artifact_93f8753b-17ab-43c5-8f11-e3ec98fe3224" artifactType="salsa:sh" artifactRef="Artifact_93f8753b-17ab-43c5-8f11-e3ec98fe3224" />
+        </ns2:DeploymentArtifacts>
+      </ns2:NodeTemplate>	  
+      <ns2:NodeTemplate id="MySQLVM" minInstances="1" maxInstances="2" type="os" >
+        <ns2:Properties>
+          <MappingProperties>
+            <MappingProperty type="os">
+              <property name="provider">dsg@flexiant</property>
+              <property name="instanceType">000001920</property>
+              <property name="baseImage">a82e054f-4f01-49f9-bc4c-77a98045739c</property>
+              <property name="packages" />
+            </MappingProperty>
+          </MappingProperties>
+        </ns2:Properties>
+        <ns2:Requirements />
+        <ns2:Capabilities>
+          <ns2:Capability id="MySQLRDBMS" type="HOSTON" />
+        </ns2:Capabilities>
+        <ns2:Policies />
+      </ns2:NodeTemplate>
+      <ns2:NodeTemplate id="WordpressData" minInstances="1" maxInstances="1" type="software">
+        <ns2:Properties>
+          <MappingProperties />
+        </ns2:Properties>
+        <ns2:Requirements>
+          <ns2:Requirement id="MySQLRDBMS" type="HOSTON" />
+        </ns2:Requirements>
+        <ns2:Capabilities />
+        <ns2:Policies />
+        <ns2:DeploymentArtifacts>
+          <ns2:DeploymentArtifact xmlns:salsa="https://github.com/tuwiendsg/SALSA" name="Artifact_23d412b9-fc0e-47dc-bc87-4ec3d4a01345" artifactType="salsa:sh" artifactRef="Artifact_23d412b9-fc0e-47dc-bc87-4ec3d4a01345" />
+        </ns2:DeploymentArtifacts>
+      </ns2:NodeTemplate>
+      <ns2:NodeTemplate id="MySQLRDBMS" minInstances="1" maxInstances="2" type="software">
+        <ns2:Properties>
+          <MappingProperties />
+        </ns2:Properties>
+        <ns2:Requirements>
+		  <ns2:Requirement id="MySQLVM" type="HOSTON" />
+        </ns2:Requirements>
+        <ns2:Capabilities>
+		   <ns2:Capability id="WordpressData" type="HOSTON" />
+		   <ns2:Capability id="WordpressPHP" type="CONNECTTO" />
+		</ns2:Capabilities>
+        <ns2:Policies />
+        <ns2:DeploymentArtifacts>
+          <ns2:DeploymentArtifact xmlns:salsa="https://github.com/tuwiendsg/SALSA" name="Artifact_93f8753b-17ab-43c5-8f11-e3ec98fe03699" artifactType="salsa:sh" artifactRef="Artifact_93f8753b-17ab-43c5-8f11-e3ec98fe03699" />
+        </ns2:DeploymentArtifacts>
+      </ns2:NodeTemplate>
+    </ns2:TopologyTemplate>
+  </ns2:ServiceTemplate>
+  <ns2:ArtifactTemplate id="Artifact_93f8753b-17ab-43c5-8f11-e3ec98fe1365" type="sh">
+    <ns2:Properties />
+    <ns2:ArtifactReferences>
+      <ns2:ArtifactReference reference="http://OMarketplace.vn/salsa/upload/files/wordpress/install_ApacheServer.sh" />
+    </ns2:ArtifactReferences>
+  </ns2:ArtifactTemplate>
+  <ns2:ArtifactTemplate id="Artifact_23d412b9-fc0e-47dc-bc87-4ec3d4a01578" type="sh">
+    <ns2:Properties />
+    <ns2:ArtifactReferences>
+      <ns2:ArtifactReference reference="http://OMarketplace.vn/salsa/upload/files/MySQL/install_PHPContainer.sh" />
+  </ns2:ArtifactReferences>
+</ns2:ArtifactTemplate>
+  <ns2:ArtifactTemplate id="Artifact_93f8753b-17ab-43c5-8f11-e3ec98fe3224" type="sh">
+    <ns2:Properties />
+    <ns2:ArtifactReferences>
+      <ns2:ArtifactReference reference="http://OMarketplace.vn/salsa/upload/files/wordpress/install_WordpressPHP.sh" />
+    </ns2:ArtifactReferences>
+  </ns2:ArtifactTemplate>
+  <ns2:ArtifactTemplate id="Artifact_23d412b9-fc0e-47dc-bc87-4ec3d4a01345" type="sh">
+    <ns2:Properties />
+    <ns2:ArtifactReferences>
+      <ns2:ArtifactReference reference="http://OMarketplace.vn/salsa/upload/files/MySQL/install_WordpressData.sh" />
+    </ns2:ArtifactReferences>
+  </ns2:ArtifactTemplate>
+  <ns2:ArtifactTemplate id="Artifact_23d412b9-fc0e-47dc-bc87-4ec3d4a03699" type="sh">
+    <ns2:Properties />
+    <ns2:ArtifactReferences>
+      <ns2:ArtifactReference reference="http://OMarketplace.vn/salsa/upload/files/MySQL/install_MySQLRDBMS.sh" />
+    </ns2:ArtifactReferences>
+  </ns2:ArtifactTemplate>
+</ns2:Definitions>

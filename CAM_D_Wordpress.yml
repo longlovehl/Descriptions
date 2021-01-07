@@ -1,0 +1,318 @@
+#########Wordpress Application#########
+###Signature###
+
+#Platform signature
+signature VM-SIG = 
+	type: HOST-ON
+	properties:
+		provider : string
+        instanceType : string
+		baseImage : string
+	methods :
+		deploy : Shell Script
+            parameters:
+                code1: <URL>
+		config : Shell Script
+            parameters:
+                code2: <URL>
+        uninstall : Shell Script
+            parameters:
+                code3: <URL>
+        re-deploy : Shell Script
+            parameters:
+                code4: <URL>
+        re-config : Shell Script
+            parameters:
+                code5: <URL>
+            
+end
+
+#Apache signature
+signature ApacheServer-SIG =
+    type: HOST-ON
+    properties:
+    methods
+        deploy : Shell Script
+            parameters:
+                code1: <URL>
+        uninstall : Shell Script
+            parameters:
+                code2: <URL>
+end
+
+#PHPContainer signature
+signature PHPContainer-SIG =
+    type: HOST-ON
+    properties:
+    methods:
+        deploy : Shell Script
+            parameters:
+                code1: <URL>
+        uninstall : Shell Script
+            parameters:
+                code2: <URL>
+end
+
+#MySQL-RDBMS signature
+signature MySQL-CONNECTION-SIG =
+    type: CONNECT-TO
+    properties:
+        ip : ip-address
+        port : integer 
+        database: string
+        username: string
+        password: string
+    methods:
+        config : Shell Script
+            parameters:
+                code1: <URL>
+        re-config : Shell Script
+            parameters :
+                code2: <URL>
+end
+
+signature MySQL-DEPLOYMENT-SIG =
+    type: HOST-ON
+    properties:
+        port : integer 
+        addmin-username: string
+        admin-password: string
+    methods:
+        install:
+            type: SQL Script
+            parameters:
+                code1: <URL>
+end
+
+###Description Template###
+
+##Platform Template##
+platform VM-Platform =
+   capabilities:
+      vm : VM-SIG
+   parameters:
+      provider map-to vm.provider
+      instanceType map-to vm.instanceType
+      baseImage map-to vm.baseImage
+end   
+ 
+#Software Component Template
+
+component ApacheServer =
+    type : SimpleComponent
+    capabilities:
+        C1: ApacheServer-SIG
+    requirements:
+        R1: VM-SIG
+    parameters:
+        code1 map-to code1.MySQL-DEPLOYMENT-SIG    
+    parameter-mappings:
+    methods:
+end    
+
+component PHPContainer =
+    type : SimpleComponent
+    capabilities:
+        C1: PHPContainer-SIG
+    requirements:
+        R1: ApacheServer-SIG
+    parameters:
+        code1 map-to code1.ApacheServer-SIG
+    parameter-mappings:
+    methods:
+end
+
+component Apache-PHP =
+    type : SoftwareStack
+    sub-components:
+        top: PHPContainer
+        base: ApacheServer
+    dependencies:
+        D1:
+            type: HOST-ON
+            from: top.requirements[R1]
+            to: base.capabilities[C1]
+    capabilities:
+        C1 map-to top.capabilities[C1]
+    requirements:
+        R1 map-to base.requirements[R1]
+    parameters:
+    parameter-mappings:
+        code1 map-to code1.base.parameters [code1]
+        code2 map-to code1.top.parameters [code1]
+    methods: 
+end
+
+component Wordpress-PHP:
+    type : SimpleComponent
+    capabilities:
+    requirements:
+        R1: PHPContainer-SIG
+        R2: MySQL-CONNECTION-SIG
+    parameters:
+        code1 map-to code1.PHPContainer-SIG 
+    parameter-mappings:
+    methods:
+        deploy: Shell Script
+            parameters:
+            code1: <URL>
+        uninstall: Shell Script
+            parameters:
+            code2: <URL>
+end
+
+##Wordpress-server
+
+component Wordpress-Server =
+    type : SoftwareStack
+    sub-components:
+        top: Wordpress-PHP
+        base: ApachePHP
+    dependencies:
+        D1:
+            type: HOST-ON
+            from: top.requirements[R1]
+            to: base.capabilities[C1]
+    capabilities:
+    requirements:
+        R1 map-to base.requirements[R1]
+        R2 map-to top.requirements[R2]
+    parameters:
+        code1 map-to code1.MySQL-CONNECTION-SIG
+    parameter-mappings:
+        code1 map-to code1.base.parameter-mappings [code1]
+        code2 map-to code2.base.parameter-mappings [code2]
+        code3 map-to code1.top.parameters [code1]
+    methods:
+end
+
+#Wordpress-DB--------
+
+component MySQL-RDBMS =
+    type : SimpleComponent
+    capabilities:0
+        C1: MySQL-CONNECTION-SIG
+        C2: MySQL-DEPLOYMENT-SIG
+    requirements:
+        R1: VM-SIG
+    parameters:
+        code1 map-to code1.VM-SIG
+        code2 map-to code2.VM-SIG
+    parameter-mappings:
+        ip map-to C1.properties[ip]
+        port map-to C1.properties[port] default 3306
+        database map-to C1.properties[database]
+        username map-to C1.properties[username]
+        password map-to C1.properties[password]
+        admin-username map-to C2.properties[admin-username]
+        admin-password map-to C1.properties[admin-password]
+    methods:
+end
+
+component Wordpress-Data =
+    type : SimpleComponent
+    capabilities:
+    requirements:
+        R1: MySQL-DEPLOYMENT-SIG
+    parameters:
+        code1 map-to code1.MySQL-DEPLOYMENT-SIG
+    parameter-mappings:
+    methods:
+    
+end
+
+##Wordpress-DB
+component Wordpress-DB =
+    type : SoftwareStack
+    sub-components:
+        top: Wordpress-Data
+        base: MySQL-RDBMS
+    dependencies:
+        D1:
+            type: HOST-ON
+            from: top.requirements[R1]
+            to: base.capabilities[C2]
+    capabilities:
+        C1 map-to base.capabilities[C1]
+    requirements:
+        R1 map-to base.requirements[R1]
+    parameters:
+    parameter-mappings:
+        ip map-to ip.base.parameter-mappings[ip]
+        port map-to port.base.parameter-mappings[port] default 3306
+        database map-to database.base.parameter-mappings[database]
+        username map-to username.base.parameter-mappings[username]
+        password map-to password.base.parameter-mappings[password]
+        admin-username map-to admin-username.base.parameter-mappings[admin-username]
+        admin-password map-to admin-password.base.parameter-mappings[admin-password]
+        code1 map-to code1.base.parameters [code1]
+        code2 map-to code2.base.parameters [code2]
+        code3 map-to code1.top.parameters [code1]
+    methods:    
+end
+
+
+##Wordpress-Software
+
+component Wordpress-Software =
+    type : SoftwareComposition
+    sub-components:
+        left: Wordpress-server
+        right: Wordpress-DB
+    dependencies:
+        d1:
+            type: CONNECT-TO
+            from: Wordpress-server.requirements[R1]
+            to: Wordpress-DB.capabilities[C1]
+    requirements:
+        R1 map-to left.requirements[R2]
+        R2 map-to right.requirements[R1]
+    capabilities:
+    parameters:
+    parameter-mappings:
+        ip map-to ip.right.parameter-mappings[ip]
+        port map-to port.right.parameter-mappings[port] default 3306
+        database map-to database.right.parameter-mappings[database]
+        username map-to username.right.parameter-mappings[username]
+        password map-to password.right.parameter-mappings[password]
+        admin-username map-to admin-username.right.parameter-mappings[admin-username]
+        admin-password map-to admin-password.right.parameter-mappings[admin-password]
+        code1 map-to code1.left.parameters [code1]
+        code2 map-to code1.left.parameter-mappings [code1]
+        code3 map-to code2.left.parameter-mappings [code2]
+        code4 map-to code3.left.parameter-mappings [code3]
+        code5 map-to code1.right.parameter-mappings [code1]
+        code6 map-to code2.right.parameter-mappings [code2]
+        code7 map-to code3.right.parameter-mappings [code3]    
+    methods:
+end
+
+ 
+## Wordpress-Application
+application Wordpress-Application =
+    software: Wordpress-Software
+        arguments:
+                
+    platforms :
+            p1 : VM-Platform
+                arguments:
+                    provider: "dsg@openstack"
+                    instanceType : "000001920"
+                    baseImage : "a82e054f-4f01-49f9-bc4c-77a98045739c"
+            p2 : VM-Platform
+                arguments:
+                    provider: "dsg@flexiant"
+                    instanceType : "000001920"
+                    baseImage : "a82e054f-4f01-49f9-bc4c-77a98045739c"
+    dependencies:
+        d1:
+            type: HOST-ON
+            from: software.requirements[R1]
+            to:   p1.capabilities[vm]
+        d2:
+            type: HOST-ON
+            from: software.requirements[R2]
+            to:   p2.capabilities[vm]
+end
+
+
